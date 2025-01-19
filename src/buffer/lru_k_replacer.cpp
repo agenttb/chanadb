@@ -15,6 +15,12 @@
 
 namespace bustub {
 
+std::time_t LRUKNode::CurrentTimestamp() {
+  auto now = std::chrono::system_clock::now();
+  std::time_t timestamp = now.time_since_epoch().count();
+  return timestamp;
+}
+
 /**
  *
  * TODO(P1): Add implementation
@@ -54,7 +60,20 @@ auto LRUKReplacer::Evict() -> std::optional<frame_id_t> { return std::nullopt; }
  * @param access_type type of access that was received. This parameter is only needed for
  * leaderboard tests.
  */
-void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {}
+void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType access_type) {
+  BUSTUB_ASSERT(frame_id >= 0 && frame_id < replacer_size_, "Invalid frame id");
+  if (const auto it = node_store_.find(frame_id); it == node_store_.end()) {
+    LRUKNode node(k_, frame_id);
+    node.history_.push_front(LRUKNode::CurrentTimestamp());
+  } else {
+    size_t size = it->second.history_.size();
+    if (size > it->second.k_) {
+      it->second.history_.pop_back();
+    }
+    it->second.history_.push_front(LRUKNode::CurrentTimestamp());
+  }
+  current_timestamp_ = LRUKNode::CurrentTimestamp();
+}
 
 /**
  * TODO(P1): Add implementation
@@ -73,7 +92,17 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
  * @param frame_id id of frame whose 'evictable' status will be modified
  * @param set_evictable whether the given frame is evictable or not
  */
-void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
+void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
+  BUSTUB_ASSERT(frame_id >= 0 && frame_id < k_, "Invalid frame id");
+  const auto it = node_store_.find(frame_id);
+  if (it->second.is_evictable_) {
+    it->second.is_evictable_ = false;
+    curr_size_--;
+  } else {
+    it->second.is_evictable_ = true;
+    curr_size_++;
+  }
+}
 
 /**
  * TODO(P1): Add implementation
@@ -92,7 +121,18 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
  *
  * @param frame_id id of frame to be removed
  */
-void LRUKReplacer::Remove(frame_id_t frame_id) {}
+void LRUKReplacer::Remove(frame_id_t frame_id) {
+  const auto it = node_store_.find(frame_id);
+  if (it == node_store_.end()) {
+    return;
+  }
+  if (it->second.is_evictable_) {
+    node_store_.erase(it);
+  } else {
+    BUSTUB_ASSERT(it->second.is_evictable_, "Invalid frame id");
+  }
+
+}
 
 /**
  * TODO(P1): Add implementation
@@ -101,6 +141,6 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {}
  *
  * @return size_t
  */
-auto LRUKReplacer::Size() -> size_t { return 0; }
+auto LRUKReplacer::Size() -> size_t { return curr_size_; }
 
 }  // namespace bustub
