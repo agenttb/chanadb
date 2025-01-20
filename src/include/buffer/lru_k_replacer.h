@@ -28,7 +28,11 @@ namespace bustub {
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 struct  LRUKNode {
- explicit LRUKNode(size_t k, frame_id_t fid) : k_(k), fid_(fid) {}
+ LRUKNode(size_t k, frame_id_t fid) : k_(k), fid_(fid) {}
+ LRUKNode(const LRUKNode &other) {
+  k_ = other.k_;
+  fid_ = other.fid_;
+ }
  ~LRUKNode() = default;
  static std::time_t CurrentTimestamp();
 
@@ -80,9 +84,9 @@ class LRUKReplacer {
   // Remove maybe_unused if you start using them.
   [[maybe_unused]] std::unordered_map<frame_id_t, LRUKNode> node_store_;
   [[maybe_unused]] std::time_t current_timestamp_{0};
-  [[maybe_unused]] size_t curr_size_{0};
-  [[maybe_unused]] size_t replacer_size_;
-  [[maybe_unused]] size_t k_;
+  [[maybe_unused]] std::int32_t curr_size_{0};
+  [[maybe_unused]] std::int32_t replacer_size_;
+  [[maybe_unused]] std::int32_t k_;
   [[maybe_unused]] std::mutex latch_;
 };
 

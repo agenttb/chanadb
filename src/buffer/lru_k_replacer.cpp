@@ -45,7 +45,30 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_fra
  *
  * @return true if a frame is evicted successfully, false if no frames can be evicted.
  */
-auto LRUKReplacer::Evict() -> std::optional<frame_id_t> { return std::nullopt; }
+auto LRUKReplacer::Evict() -> std::optional<frame_id_t> {
+  // std::time_t timestamp = 0;
+  // frame_id_t lt_k_node = 0;
+  // frame_id_t k_node = 0;
+  // for (const auto &node : node_store_) {
+  //   if (node.second.is_evictable_ && node.second.history_.size() == k_) {
+  //     if (timestamp < node.second.history_.front()) {
+  //       timestamp = node.second.history_.front();
+  //       k_node = node.first;
+  //     }
+  //   } else {
+  //     if (node.second.is_evictable_ && timestamp < node.second.history_.front()) {
+  //       timestamp = node.second.history_.front();
+  //       lt_k_node = node.first;
+  //     }
+  //   }
+  // }
+  // if (k_node != 0) {
+  //   node_store_.erase(k_node);
+  //   return std::optional<frame_id_t>(lt_k_node);
+  // }
+  // frame_id_t should_be_evictable = ;
+  return std::nullopt;
+}
 
 /**
  * TODO(P1): Add implementation
@@ -65,6 +88,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
   if (const auto it = node_store_.find(frame_id); it == node_store_.end()) {
     LRUKNode node(k_, frame_id);
     node.history_.push_front(LRUKNode::CurrentTimestamp());
+    node_store_.insert({frame_id, node});
   } else {
     size_t size = it->second.history_.size();
     if (size > it->second.k_) {
@@ -93,13 +117,13 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, [[maybe_unused]] AccessType
  * @param set_evictable whether the given frame is evictable or not
  */
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  BUSTUB_ASSERT(frame_id >= 0 && frame_id < k_, "Invalid frame id");
+  BUSTUB_ASSERT(frame_id >= 0 && frame_id < replacer_size_, "Invalid frame id");
   const auto it = node_store_.find(frame_id);
-  if (it->second.is_evictable_) {
-    it->second.is_evictable_ = false;
+  if (it->second.is_evictable_ && !set_evictable) {
+    it->second.is_evictable_ = set_evictable;
     curr_size_--;
-  } else {
-    it->second.is_evictable_ = true;
+  } else if (!it->second.is_evictable_ && set_evictable) {
+    it->second.is_evictable_ = set_evictable;
     curr_size_++;
   }
 }
